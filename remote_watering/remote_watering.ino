@@ -1,0 +1,157 @@
+#include <WiFi.h>
+#include <WebServer.h>
+#include <Adafruit_Sensor.h>
+#include "DHT.h"
+
+#define DHTTYPE DHT11   // DHT 11
+#define DHTPIN 4        //// 温湿度传感器连接到GPI4 
+DHT dht(DHTPIN, DHTTYPE);
+
+
+// Wi-Fi 连接信息
+const char* ssid = "CU_uNQd";
+const char* password = "yks4yeeb";
+
+
+// ESP32的IP地址
+IPAddress local_IP(192, 168, 1, 100);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+
+// 创建Web服务器，监听端口80
+WebServer server(80);
+
+// 传感器和继电器引脚
+const int soilMoisturePin = 6;  // 土壤湿度传感器连接到GPIO6
+const int relayPin = 2;         // 控制水泵的继电器连接到GPIO2
+
+// 自动浇水模式标志
+bool autoWateringEnabled = false;
+// 自动冷却模式标志
+bool autoColdingEnabled = false;
+
+int temperature,humidity,soilmoisture;
+
+void setup() {
+  Serial.begin(115200);
+  //dht温湿度初始化
+  dht.begin();
+  // 初始化Wi-Fi
+  WiFi.config(local_IP, gateway, subnet);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+
+  // 初始化继电器和传感器引脚
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, HIGH); // 默认关闭水泵
+
+  // 配置服务器端点
+  server.on("/water", handleWaterRequest);
+  server.on("/colding", handleColdRequest);
+  server.on("/sensor", handleSensorData);
+  
+
+  // 启动服务器
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  // 处理HTTP请求
+  server.handleClient();
+
+  // 检查自动浇水模式
+  if (autoWateringEnabled) {
+    if (soilmoisture < 50) {  // 根据湿度值进行阈值设定
+      digitalWrite(relayPin, LOW); // 开启水泵
+      delay(5000);                 // 浇水5秒
+      digitalWrite(relayPin, HIGH); // 关闭水泵
+    }
+  }
+  // 检查自动冷却模式
+  if (autoColdingEnabled) {
+    if (temperature > 35) {  // 根据湿度值进行阈值设定
+      digitalWrite(relayPin, LOW); // 开启风扇
+    }
+    else{
+      digitalWrite(relayPin, HIGH);//关闭风扇
+    }
+  }
+}
+
+// 处理手动和自动浇水请求
+void handleWaterRequest() {
+  String mode = server.arg("mode");
+
+  if (mode == "manual") {
+    digitalWrite(relayPin, LOW); // 开启水泵
+    delay(5000);                 // 浇水5秒
+    digitalWrite(relayPin, HIGH); // 关闭水泵
+    server.send(200, "text/plain", "Manual watering started");
+  } 
+  else if (mode == "on") {
+    autoWateringEnabled = true;
+    server.send(200, "text/plain", "Auto watering enabled");
+  } 
+  else if (mode == "off") {
+    autoWateringEnabled = false;
+    server.send(200, "text/plain", "Auto watering disabled");
+  } 
+  else {
+    server.send(400, "text/plain", "Invalid mode");
+  }
+}
+
+bool coldingFlag = 0;
+// 处理手动和自动冷却请求
+void handleColdRequest() {
+  String mode = server.arg("mode");
+
+  if (mode == "manual") {
+    coldingFlag = ! coldingFlag; //翻转标志
+    digitalWrite(relayPin, coldingFlag); 
+    server.send(200, "text/plain", "Manual colding started");
+  } 
+  else if (mode == "on") {
+    autoColdingEnabled = true;
+    server.send(200, "text/plain", "Auto watering enabled");
+  } 
+  else if (mode == "off") {
+    autoColdingEnabled = false;
+    server.send(200, "text/plain", "Auto watering disabled");
+  } 
+  else {
+    server.send(400, "text/plain", "Invalid mode");
+  }
+}
+
+// 返回土壤湿度和温度数据
+void handleSensorData() {
+  int m = 100-(analogRead(soilMoisturePin)-1100)/17;    // analogRead(soilMoisturePin)读取土壤湿度ADC测定2780-1170（空气中-完全浸泡），给定区间（2800，1100）
+  int h = dht.readHumidity();//读取湿度
+  int t = dht.readTemperature();//读取温度（摄氏）false
+  int f = dht.readTemperature(true);//读取温度（华氏）
+  
+  // 检查是否有任何读取失败并提前退出（重试）
+  if (isnan(h) || isnan(t) || isnan(f)) {
+    Serial.println(F("Failed to read from DHT sensor!"));
+    return;
+  }
+  Serial.printf("Humidity: %d\n",h);
+  Serial.printf("Temperature: %d\n",t);
+  Serial.printf("Soil moisture: %d\n",m);
+
+  temperature=t;
+  humidity=h;
+  soilmoisture=m;
+
+  // 打包json，格式为{"temperature": xx, "humidity": xx, "soilmoisture": xx}
+  String jsonResponse = "{\"temperature\": " + String(t) + ", \"humidity\": "+String(h)+
+                        ", \"soilmoisture\": " + String(m) + "}";
+
+  server.send(200, "application/json", jsonResponse);
+}
