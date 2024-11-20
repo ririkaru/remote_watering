@@ -7,6 +7,14 @@
 #define DHTPIN 4        //// 温湿度传感器连接到GPI4 
 DHT dht(DHTPIN, DHTTYPE);
 
+// L298N 引脚定义
+#define ENA 41      // 电机 1 的 PWM 引脚
+#define IN1 40      // 电机 1 正转引脚
+#define IN2 39      // 电机 1 反转引脚
+#define IN3 38      // 电机 2 正转引脚
+#define IN4 37      // 电机 2 反转引脚
+#define ENB 36      // 电机 2 的 PWM 引脚
+
 
 // Wi-Fi 连接信息
 const char* ssid = "CU_uNQd";
@@ -23,7 +31,7 @@ WebServer server(80);
 
 // 传感器和继电器引脚
 const int soilMoisturePin = 6;  // 土壤湿度传感器连接到GPIO6
-const int relayPin = 2;         // 控制水泵的继电器连接到GPIO2
+
 
 // 自动浇水模式标志
 bool autoWateringEnabled = false;
@@ -45,13 +53,22 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
-  // 初始化继电器和传感器引脚
-  pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, HIGH); // 默认关闭水泵
+
+    // 设置引脚为输出模式
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  // 启动时所有电机停止
+  stopMotor1();
+  stopMotor2();
 
   // 配置服务器端点
   server.on("/water", handleWaterRequest);
-  server.on("/colding", handleColdRequest);
+  server.on("/cold", handleColdRequest);
   server.on("/sensor", handleSensorData);
   
 
@@ -67,18 +84,21 @@ void loop() {
   // 检查自动浇水模式
   if (autoWateringEnabled) {
     if (soilmoisture < 50) {  // 根据湿度值进行阈值设定
-      digitalWrite(relayPin, LOW); // 开启水泵
+      forwardMotor1(); // 开启水泵
       delay(5000);                 // 浇水5秒
-      digitalWrite(relayPin, HIGH); // 关闭水泵
+      stopMotor1(); // 关闭水泵
     }
   }
+
+
+
   // 检查自动冷却模式
   if (autoColdingEnabled) {
     if (temperature > 35) {  // 根据湿度值进行阈值设定
-      digitalWrite(relayPin, LOW); // 开启风扇
+      forwardMotor2();//开启风扇
     }
     else{
-      digitalWrite(relayPin, HIGH);//关闭风扇
+      stopMotor2();//关闭风扇
     }
   }
 }
@@ -88,9 +108,9 @@ void handleWaterRequest() {
   String mode = server.arg("mode");
 
   if (mode == "manual") {
-    digitalWrite(relayPin, LOW); // 开启水泵
+    forwardMotor1(); // 开启水泵
     delay(5000);                 // 浇水5秒
-    digitalWrite(relayPin, HIGH); // 关闭水泵
+    stopMotor1(); // 关闭水泵
     server.send(200, "text/plain", "Manual watering started");
   } 
   else if (mode == "on") {
@@ -113,7 +133,12 @@ void handleColdRequest() {
 
   if (mode == "manual") {
     coldingFlag = ! coldingFlag; //翻转标志
-    digitalWrite(relayPin, coldingFlag); 
+    if(coldingFlag){
+      forwardMotor2();//开启风扇
+    }
+    else{
+      stopMotor2();//关闭风扇
+    }
     server.send(200, "text/plain", "Manual colding started");
   } 
   else if (mode == "on") {
@@ -154,4 +179,46 @@ void handleSensorData() {
                         ", \"soilmoisture\": " + String(m) + "}";
 
   server.send(200, "application/json", jsonResponse);
+}
+
+// 电机 1 前进
+void forwardMotor1() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(ENA, HIGH);
+}
+
+// 电机 1 后退
+void backwardMotor1() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(ENA, HIGH);
+}
+
+// 电机 1 停止
+void stopMotor1() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(ENA, LOW);
+}
+
+// 电机 2 前进
+void forwardMotor2() {
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  digitalWrite(ENB, HIGH);
+}
+
+// 电机 2 后退
+void backwardMotor2() {
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  digitalWrite(ENB, HIGH);
+}
+
+// 电机 2 停止
+void stopMotor2() {
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  digitalWrite(ENB, LOW);
 }
