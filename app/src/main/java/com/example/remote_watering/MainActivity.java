@@ -69,33 +69,27 @@ public class MainActivity extends AppCompatActivity {
         temperatureSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // 更新显示
                 temperatureThresholdText.setText("温度阈值: " + progress + "°C");
             }
+
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {}
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // 用户抬手时发送设定的阈值
-                sendThreshold("temperature",seekBar.getProgress());
-            }
+            public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
         SoilMoistureSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                // 更新显示
-                SoilMoistureThresholdText.setText("土壤湿度阈值: " + progress + "%");
+                SoilMoistureThresholdText.setText("湿度阈值: " + progress + "%");
             }
+
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {}
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                // 用户抬手时发送设定的阈值
-                sendThreshold("soilMoisture",seekBar.getProgress());
-            }
+            public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
         // 启动定时任务
@@ -104,25 +98,68 @@ public class MainActivity extends AppCompatActivity {
 
     // 请求ESP32进行手动浇水
     private void sendWateringRequest() {
-        String request="/water?mode=manual";
-        requestSendAndReaction(request);
+        new Thread(() -> {
+            try {
+                URL url = new URL(ESP32_IP + "/water?mode=manual");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                int responseCode = conn.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    runOnUiThread(() -> Toast.makeText(this, "Watering started", Toast.LENGTH_SHORT).show());
+                }
+                conn.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
+
     // 请求ESP32进行手动降温
     private void sendColdingRequest() {
-        String request="/cold?mode=manual";
-        requestSendAndReaction(request);
+        new Thread(() -> {
+            try {
+                URL url = new URL(ESP32_IP + "/cold?mode=manual");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                int responseCode = conn.getResponseCode();
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    runOnUiThread(() -> Toast.makeText(this, "Colding started", Toast.LENGTH_SHORT).show());
+                }
+                conn.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     // 设置自动浇水模式
     private void sendAutoWateringRequest(String mode) {
-        String request="/water?mode=" + mode;
-        requestSendAndReaction(request);
+        new Thread(() -> {
+            try {
+                URL url = new URL(ESP32_IP + "/water?mode=" + mode);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.getResponseCode();
+                conn.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     // 设置自动降温模式
     private void sendAutoColdingRequest(String mode) {
-        String request="/cold?mode=" + mode;
-        requestSendAndReaction(request);
+        new Thread(() -> {
+            try {
+                URL url = new URL(ESP32_IP + "/cold?mode=" + mode);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.getResponseCode();
+                conn.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     // 定时请求温湿度数据的任务
@@ -159,30 +196,6 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
-    //发送阈值给esp332
-    private void sendThreshold(String type, int value) {
-        new Thread(() -> {
-            try {
-                // 构建请求 URL，发送数据类型和阈值
-                URL url = new URL(ESP32_IP + "/setThreshold?type=" + type + "&value=" + value);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-
-                // 发送请求并检查响应
-                int responseCode = conn.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    // 如果成功，可以在 UI 线程中显示反馈
-                    runOnUiThread(() -> Toast.makeText(this, type + " 阈值已发送", Toast.LENGTH_SHORT).show());
-                }
-                conn.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
-                runOnUiThread(() -> Toast.makeText(this, "发送失败: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-            }
-        }).start();
-    }
-
-
     // 解析并显示传感器数据
     private void parseAndDisplaySensorData(String jsonData) {
         runOnUiThread(() -> {
@@ -202,36 +215,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-    void requestSendAndReaction(String request){
-        new Thread(() -> {
-            try {
-                URL url = new URL(ESP32_IP + request);
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("GET");
-
-                // 获取 HTTP 响应码
-                int responseCode = conn.getResponseCode();
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    // 读取响应信息
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
-                    reader.close();
-
-                    // 在主线程显示提示信息
-                    runOnUiThread(() -> Toast.makeText(this, "ESP32 响应: " + response.toString(), Toast.LENGTH_SHORT).show());
-                }
-                conn.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
-
 
     @Override
     protected void onDestroy() {

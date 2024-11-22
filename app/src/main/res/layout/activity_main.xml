@@ -84,7 +84,7 @@
         android:id="@+id/SoilMoistureThresholdText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="土壤湿度阈值: 50%"
+        android:text="湿度阈值: 50%"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/SoilMoistureSeekBar"
         app:layout_constraintStart_toStartOf="@+id/SoilMoistureSeekBar" />
@@ -105,7 +105,7 @@
         android:id="@+id/temperatureThresholdText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="温度阈值: 30°C"
+        android:text="温度阈值: 25°C"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/temperatureSeekBar"
         app:layout_constraintStart_toStartOf="@+id/temperatureSeekBar" />

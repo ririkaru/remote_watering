@@ -39,10 +39,15 @@ bool autoWateringEnabled = false;
 bool autoColdingEnabled = false;
 
 int temperature,humidity,soilmoisture;
+// 土壤湿度阈值
+int soilMoistureThreshold = 50;
+// 温度阈值
+int temperatureThreshold = 30;
 
+// 初始化，上电调用
 void setup() {
   Serial.begin(115200);
-  //dht温湿度初始化
+  // dht温湿度初始化
   dht.begin();
   // 初始化Wi-Fi
   WiFi.config(local_IP, gateway, subnet);
@@ -54,7 +59,7 @@ void setup() {
   Serial.println("Connected to WiFi");
 
 
-    // 设置引脚为输出模式
+  // 设置引脚为输出模式
   pinMode(ENA, OUTPUT);
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
@@ -70,8 +75,8 @@ void setup() {
   server.on("/water", handleWaterRequest);
   server.on("/cold", handleColdRequest);
   server.on("/sensor", handleSensorData);
+  server.on("/setThreshold",handleSetThreshold);
   
-
   // 启动服务器
   server.begin();
   Serial.println("HTTP server started");
@@ -83,18 +88,16 @@ void loop() {
 
   // 检查自动浇水模式
   if (autoWateringEnabled) {
-    if (soilmoisture < 50) {  // 根据湿度值进行阈值设定
+    if (soilmoisture < soilMoistureThreshold) {  // 根据湿度值进行阈值设定
       forwardMotor1(); // 开启水泵
       delay(5000);                 // 浇水5秒
       stopMotor1(); // 关闭水泵
     }
   }
 
-
-
   // 检查自动冷却模式
   if (autoColdingEnabled) {
-    if (temperature > 35) {  // 根据湿度值进行阈值设定
+    if (temperature > temperatureThreshold) {  // 根据湿度值进行阈值设定
       forwardMotor2();//开启风扇
     }
     else{
@@ -109,9 +112,9 @@ void handleWaterRequest() {
 
   if (mode == "manual") {
     forwardMotor1(); // 开启水泵
+    server.send(200, "text/plain", "Manual watering started");
     delay(5000);                 // 浇水5秒
     stopMotor1(); // 关闭水泵
-    server.send(200, "text/plain", "Manual watering started");
   } 
   else if (mode == "on") {
     autoWateringEnabled = true;
@@ -143,11 +146,11 @@ void handleColdRequest() {
   } 
   else if (mode == "on") {
     autoColdingEnabled = true;
-    server.send(200, "text/plain", "Auto watering enabled");
+    server.send(200, "text/plain", "Auto colding enabled");
   } 
   else if (mode == "off") {
     autoColdingEnabled = false;
-    server.send(200, "text/plain", "Auto watering disabled");
+    server.send(200, "text/plain", "Auto colding disabled");
   } 
   else {
     server.send(400, "text/plain", "Invalid mode");
@@ -181,6 +184,21 @@ void handleSensorData() {
   server.send(200, "application/json", jsonResponse);
 }
 
+//接收并更新自动控制中温度/土壤湿度的阈值
+void handleSetThreshold() {
+  String type = server.arg("type");  // 获取类型参数（soilMoisture 或 temperature）
+  String value = server.arg("value");  // 获取阈值参数
+
+  if (type == "soilMoisture") {
+    soilMoistureThreshold = value.toInt();  // 更新土壤湿度阈值
+  } else if (type == "temperature") {
+    temperatureThreshold = value.toInt();  // 更新温度阈值
+  }
+
+  server.send(200, "text/plain", "Threshold updated");
+}
+
+// 电机动作
 // 电机 1 前进
 void forwardMotor1() {
   digitalWrite(IN1, HIGH);
