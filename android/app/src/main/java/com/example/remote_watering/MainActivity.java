@@ -2,6 +2,7 @@ package com.example.remote_watering;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.Switch;
@@ -141,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
                 URL url = new URL(ESP32_IP + "/sensor");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
-
+                
                 BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                 StringBuilder response = new StringBuilder();
                 String line;
@@ -187,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
     private void parseAndDisplaySensorData(String jsonData) {
         runOnUiThread(() -> {
             try {
-                // 假设ESP32返回的数据是JSON格式
+                // ESP32返回的数据是JSON格式，格式为{"temperature": xx, "humidity": xx, "soilmoisture": xx}
                 JSONObject jsonObject = new JSONObject(jsonData);
                 int temperature = jsonObject.getInt("temperature");
                 int humidity = jsonObject.getInt("humidity");
@@ -203,6 +204,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // 通用的发送get请求及显示响应信息
     void requestSendAndReaction(String request){
         new Thread(() -> {
             try {
