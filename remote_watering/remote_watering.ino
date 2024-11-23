@@ -90,7 +90,8 @@ void loop() {
   if (autoWateringEnabled) {
     if (soilmoisture < soilMoistureThreshold) {  // 根据湿度值进行阈值设定
       forwardMotor1(); // 开启水泵
-      delay(5000);                 // 浇水5秒
+    }
+    else {
       stopMotor1(); // 关闭水泵
     }
   }
@@ -106,15 +107,20 @@ void loop() {
   }
 }
 
+bool waterFlag=0;
 // 处理手动和自动浇水请求
 void handleWaterRequest() {
   String mode = server.arg("mode");
 
   if (mode == "manual") {
-    forwardMotor1(); // 开启水泵
-    server.send(200, "text/plain", "Manual watering started");
-    delay(5000);                 // 浇水5秒
-    stopMotor1(); // 关闭水泵
+    waterFlag = !waterFlag;
+    if(waterFlag){
+      forwardMotor1(); // 开启水泵
+    }
+    else{
+      stopMotor1(); // 关闭水泵
+    }
+    server.send(200, "text/plain", "Manual watering");
   } 
   else if (mode == "on") {
     autoWateringEnabled = true;
@@ -142,7 +148,7 @@ void handleColdRequest() {
     else{
       stopMotor2();//关闭风扇
     }
-    server.send(200, "text/plain", "Manual colding started");
+    server.send(200, "text/plain", "Manual colding");
   } 
   else if (mode == "on") {
     autoColdingEnabled = true;
