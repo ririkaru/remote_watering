@@ -3,6 +3,9 @@ package com.example.remote_watering;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.Switch;
@@ -22,9 +25,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView temperatureText, humidityText, soilmoistureText, temperatureThresholdText, SoilMoistureThresholdText;
     private Button manualWaterButton,manualColdButton;
     private Switch autoWaterSwitch,autoColdSwitch;
-
     private SeekBar temperatureSeekBar, SoilMoistureSeekBar;
-
+    private WebView myWebView;
     private static final String ESP32_IP = "http://192.168.1.100";  // ESP32的IP地址
     private Handler handler = new Handler();
     private final int FETCH_INTERVAL = 5000;  // 每5秒请求一次数据
@@ -48,6 +50,15 @@ public class MainActivity extends AppCompatActivity {
 
         temperatureSeekBar = findViewById(R.id.temperatureSeekBar);
         SoilMoistureSeekBar = findViewById(R.id.SoilMoistureSeekBar);
+
+        myWebView = findViewById(R.id.webview);
+        myWebView.setWebViewClient(new WebViewClient()); // 在 WebView 内部加载 URL
+
+        WebSettings webSettings = myWebView.getSettings();
+        webSettings.setJavaScriptEnabled(true); // 启用 JavaScript
+
+        // 加载要展示的网页
+        myWebView.loadUrl("http://192.168.1.101/mjpeg/1");
 
         manualWaterButton.setOnClickListener(view -> sendWateringRequest());
         manualColdButton.setOnClickListener(view -> sendColdingRequest());
