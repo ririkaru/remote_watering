@@ -12,6 +12,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import org.json.JSONObject;
 
@@ -27,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private Switch autoWaterSwitch,autoColdSwitch;
     private SeekBar temperatureSeekBar, SoilMoistureSeekBar;
     private WebView myWebView;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private static final String ESP32_IP = "http://192.168.1.100";  // ESP32的IP地址
     private Handler handler = new Handler();
     private final int FETCH_INTERVAL = 5000;  // 每5秒请求一次数据
@@ -56,9 +58,21 @@ public class MainActivity extends AppCompatActivity {
 
         WebSettings webSettings = myWebView.getSettings();
         webSettings.setJavaScriptEnabled(true); // 启用 JavaScript
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setUseWideViewPort(true); // 适配网页宽度
+        webSettings.setBuiltInZoomControls(false); // 禁用缩放
+        webSettings.setDisplayZoomControls(false); // 不显示缩放按钮
 
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         // 加载要展示的网页
         myWebView.loadUrl("http://192.168.1.101/mjpeg/1");
+
+        // 下拉刷新逻辑
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            myWebView.reload(); // 刷新 WebView
+            swipeRefreshLayout.setRefreshing(false); // 停止刷新动画
+            Toast.makeText(this, "刷新成功", Toast.LENGTH_SHORT).show();
+        });
 
         manualWaterButton.setOnClickListener(view -> sendWateringRequest());
         manualColdButton.setOnClickListener(view -> sendColdingRequest());
