@@ -198,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
                 int responseCode = conn.getResponseCode();
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     // 如果成功，可以在 UI 线程中显示反馈
-                    runOnUiThread(() -> Toast.makeText(this, type + " 阈值已发送", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> Toast.makeText(this, type.equals("temperature")?"温度阈值已发送":"湿度阈值已发送", Toast.LENGTH_SHORT).show());
                 }
                 conn.disconnect();
             } catch (Exception e) {
