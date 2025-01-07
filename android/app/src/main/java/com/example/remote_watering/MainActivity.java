@@ -156,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             fetchSensorData();  // 执行请求传感器数据
+
             handler.postDelayed(this, FETCH_INTERVAL);  // 每隔FETCH_INTERVAL毫秒再次执行
         }
     };

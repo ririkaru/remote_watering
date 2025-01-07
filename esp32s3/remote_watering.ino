@@ -28,9 +28,6 @@ IPAddress subnet(255, 255, 255, 0);
 
 // 创建Web服务器，监听端口80
 WebServer server(80);
-
-
-
 // 自动浇水模式标志
 bool autoWateringEnabled = false;
 // 自动冷却模式标志
