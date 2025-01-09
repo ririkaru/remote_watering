@@ -90,15 +90,22 @@ void loop() {
       stopMotor1(); // 关闭水泵
     }
   }
+  else {
+   stopMotor1(); // 关闭水泵
+  }
+
 
   // 检查自动冷却模式
   if (autoColdingEnabled) {
     if (temperature > temperatureThreshold) {  // 根据湿度值进行阈值设定
       forwardMotor2();//开启风扇
     }
-    else{
+    else {
       stopMotor2();//关闭风扇
     }
+  }
+  else { 
+    stopMotor2();//关闭风扇
   }
 }
 
