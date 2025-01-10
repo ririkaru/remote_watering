@@ -90,10 +90,6 @@ void loop() {
       stopMotor1(); // 关闭水泵
     }
   }
-  else {
-   stopMotor1(); // 关闭水泵
-  }
-
 
   // 检查自动冷却模式
   if (autoColdingEnabled) {
@@ -103,9 +99,6 @@ void loop() {
     else {
       stopMotor2();//关闭风扇
     }
-  }
-  else { 
-    stopMotor2();//关闭风扇
   }
 }
 
@@ -132,6 +125,7 @@ void handleWaterRequest() {
   } 
   else if (mode == "off") {
     autoWateringEnabled = false;
+    stopMotor1(); // 关闭水泵
     server.send(200, "text/plain", "自动浇水停止");
   } 
   else {
@@ -162,6 +156,7 @@ void handleColdRequest() {
   } 
   else if (mode == "off") {
     autoColdingEnabled = false;
+    stopMotor2();// 关闭风扇
     server.send(200, "text/plain", "自动降温停止");
   } 
   else {
