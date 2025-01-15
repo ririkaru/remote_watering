@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar temperatureSeekBar, SoilMoistureSeekBar;
     private WebView myWebView;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private static final String ESP32_IP = "http://192.168.1.100";  // ESP32的IP地址
+    private static final String ESP32_IP = "http://192.168.43.88";  // ESP32的IP地址
     private Handler handler = new Handler();
     private final int FETCH_INTERVAL = 5000;  // 每5秒请求一次数据
 
@@ -65,8 +65,8 @@ public class MainActivity extends AppCompatActivity {
 
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         // 加载要展示的网页
-        myWebView.loadUrl("http://192.168.1.101/mjpeg/1");
-
+//        myWebView.loadUrl("http://192.168.1.101/mjpeg/1");
+        myWebView.loadUrl("http://192.168.43.89/mjpeg/1");
         // 下拉刷新逻辑
         swipeRefreshLayout.setOnRefreshListener(() -> {
             myWebView.reload(); // 刷新 WebView

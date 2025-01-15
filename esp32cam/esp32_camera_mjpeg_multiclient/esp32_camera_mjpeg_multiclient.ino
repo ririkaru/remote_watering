@@ -434,11 +434,12 @@ void setup()
 
 
   //  Configure and connect to WiFi
-  IPAddress ip(192, 168, 1, 101);
+  // IPAddress ip(192, 168, 1, 101);
+  IPAddress ip(192, 168, 43, 89);
   WiFi.mode(WIFI_STA);
   WiFi.config(ip);
-  WiFi.begin("CU_uNQd", "yks4yeeb");//WIFI名称和密码
-//  WiFi.begin("OPPOA93", "yks4yeeb");//WIFI名称和密码
+  // WiFi.begin("CU_uNQd", "yks4yeeb");//WIFI名称和密码
+  WiFi.begin("OPPO A11s", "su501501");//WIFI名称和密码
   Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED)
   {

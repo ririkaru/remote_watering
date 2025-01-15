@@ -18,11 +18,14 @@ const int soilMoisturePin = 6;  // 土壤湿度传感器连接到GPIO6
 #define ENB 36      // 电机 2 的 PWM 引脚
 
 // Wi-Fi 连接信息
-const char* ssid = "CU_uNQd";
-const char* password = "yks4yeeb";
+// const char* ssid = "CU_uNQd";
+// const char* password = "yks4yeeb";
+
+const char* ssid = "OPPO A11s";
+const char* password = "su501501";
 
 // ESP32的IP地址
-IPAddress local_IP(192, 168, 1, 100);
+IPAddress local_IP(192, 168, 43, 88);
 IPAddress gateway(192, 168, 1, 1);
 IPAddress subnet(255, 255, 255, 0);
 
@@ -52,6 +55,8 @@ void setup() {
     Serial.println("Connecting to WiFi...");
   }
   Serial.println("Connected to WiFi");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
 
 
   // 设置引脚为输出模式
@@ -191,6 +196,7 @@ void handleSensorData() {
   humidity=h;
   soilmoisture=m;
 }
+
 
 // 接收并更新自动控制中温度/土壤湿度的阈值
 void handleSetThreshold() {
